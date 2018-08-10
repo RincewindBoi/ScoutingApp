@@ -63,4 +63,15 @@ public class ScoutingHome extends AppCompatActivity {
 
     }
 
+    public class TeamListDbHelper extends SQLiteOpenHelper {
+        public static final int DATABASE_VERSION = 1;
+        public static final String DATABASE_NAME = "TeamList.db";
+
+        public TeamListDbHelper(Context context) {
+            super(conext, DATABASE_NAME, null, DATABASE_VERSION);
+        }
+    }
+
+
+
 }
