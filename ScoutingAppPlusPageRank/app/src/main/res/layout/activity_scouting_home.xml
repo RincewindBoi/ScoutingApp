@@ -36,8 +36,8 @@
         android:text="Field and pit notes"
         app:layout_constraintLeft_toLeftOf="parent"
         app:layout_constraintRight_toRightOf="parent"
-
-        app:layout_constraintTop_toTopOf="parent" />
+        app:layout_constraintTop_toTopOf="parent"
+        />
 
     <Button
         android:id="@+id/button"
@@ -58,5 +58,25 @@
         app:layout_constraintLeft_toLeftOf="parent"
         app:layout_constraintRight_toRightOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
+
+    <Button
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="196dp"
+        android:text="Add Team and note"
+        app:layout_constraintTop_toTopOf="parent"
+        tools:layout_editor_absoluteX="98dp"
+        app:layout_constraintLeft_toLeftOf="parent"
+        app:layout_constraintRight_toRightOf="parent"/>
+
+    <Button
+        android:layout_width="164dp"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="244dp"
+        android:text="Edit Notes"
+        app:layout_constraintTop_toTopOf="parent"
+        tools:layout_editor_absoluteX="98dp"
+        app:layout_constraintLeft_toLeftOf="parent"
+        app:layout_constraintRight_toRightOf="parent"/>
 
 </android.support.constraint.ConstraintLayout>
