@@ -1,11 +1,13 @@
 package com.example.damienfullerton.scoutingapppluspagerank;
 
 import android.os.Bundle;
+import android.provider.BaseColumns;
 import android.support.annotation.NonNull;
 import android.support.design.widget.BottomNavigationView;
 import android.support.v7.app.AppCompatActivity;
 import android.view.MenuItem;
 import android.widget.TextView;
+import android.database.sqlite.*;
 
 public class ScoutingHome extends AppCompatActivity {
 
@@ -39,6 +41,26 @@ public class ScoutingHome extends AppCompatActivity {
         mTextMessage = (TextView) findViewById(R.id.message);
         BottomNavigationView navigation = (BottomNavigationView) findViewById(R.id.navigation);
         navigation.setOnNavigationItemSelectedListener(mOnNavigationItemSelectedListener);
+    }
+
+    public final class TeamList {
+        private TeamList() {}
+
+        public class TeamEntry implements BaseColumns {
+            public static final String TABLE_NAME = "Team List";
+            public static final String COLUMN_NAME_TITLE = "Team Number";
+            public static final String COLUMN_NAME_SUBTITLE = "Team Name";
+        }
+
+        private static final String SQL_CREATE_ENTRIES =
+                "CREATE TABLE" +TeamEntry.TABLE_NAME + " (" +
+                        TeamEntry._ID + "INTEGER PRIMARY KEY ," +
+                        TeamEntry.COLUMN_NAME_TITLE + "TEXT , " +
+                        TeamEntry.COLUMN_NAME_SUBTITLE + "TEXT)";
+
+        private static final String SQL_DELETE_ENTRIES =
+                "DROP TABLE IS EXISTS" + TeamEntry.TABLE_NAME;
+
     }
 
 }
