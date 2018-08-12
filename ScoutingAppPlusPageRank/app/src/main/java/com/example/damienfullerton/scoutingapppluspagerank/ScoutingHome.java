@@ -1,91 +1,210 @@
 package com.example.damienfullerton.scoutingapppluspagerank;
 
-import android.content.Context;
+import android.app.Activity;
+import android.content.Intent;
+import android.net.Uri;
 import android.os.Bundle;
-import android.provider.BaseColumns;
-import android.support.annotation.NonNull;
-import android.support.design.widget.BottomNavigationView;
-import android.support.v7.app.AppCompatActivity;
+import android.text.Editable;
+import android.text.TextWatcher;
+import android.view.ContextMenu;
+import android.view.Menu;
 import android.view.MenuItem;
+import android.view.View;
+import android.view.ViewGroup;
+import android.widget.AdapterView;
+import android.widget.ArrayAdapter;
+import android.widget.Button;
+import android.widget.EditText;
+import android.widget.ImageView;
+import android.widget.ListView;
+import android.widget.TabHost;
 import android.widget.TextView;
-import android.database.sqlite.*;
+import android.widget.Toast;
 
-public class ScoutingHome extends AppCompatActivity {
+import java.util.ArrayList;
+import java.util.List;
 
-    private TextView mTextMessage;
+public class ScoutingHome extends Activity {
 
-    private BottomNavigationView.OnNavigationItemSelectedListener mOnNavigationItemSelectedListener
-            = new BottomNavigationView.OnNavigationItemSelectedListener() {
+    private static final int EDIT = 0, DELETE = 1;
 
-        @Override
-        public boolean onNavigationItemSelected(@NonNull MenuItem item) {
-            switch (item.getItemId()) {
-                case R.id.navigation_home:
-                    mTextMessage.setText(R.string.title_home);
-                    return true;
-                case R.id.navigation_dashboard:
-                    mTextMessage.setText(R.string.title_dashboard);
-                    return true;
-                case R.id.navigation_notifications:
-                    mTextMessage.setText(R.string.title_notifications);
-                    return true;
-            }
-            return false;
-        }
-    };
+
+    EditText nameTxt, phoneTxt, emailTxt, addressTxt;
+    ImageView contactImageImgView;
+    List<Contact> Contacts = new ArrayList<Contact>();
+    ListView contactListView;
+    Uri imageUri = Uri.parse("android.resource://org.intracode.contactmanager/drawable/no_user_logo.png");
+    DatabaseHandler dbHandler;
+    int longClickedItemIndex;
+    ArrayAdapter<Contact> contactAdapter;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_scouting_home);
 
-        mTextMessage = (TextView) findViewById(R.id.message);
-        BottomNavigationView navigation = (BottomNavigationView) findViewById(R.id.navigation);
-        navigation.setOnNavigationItemSelectedListener(mOnNavigationItemSelectedListener);
+        nameTxt = (EditText) findViewById(R.id.txtName);
+        phoneTxt = (EditText) findViewById(R.id.txtPhone);
+        emailTxt = (EditText) findViewById(R.id.txtEmail);
+        addressTxt = (EditText) findViewById(R.id.txtAddress);
+        contactListView = (ListView) findViewById(R.id.listView);
+
+        dbHandler = new DatabaseHandler(getApplicationContext());
+
+        registerForContextMenu(contactListView);
+
+        contactListView.setOnItemLongClickListener(new AdapterView.OnItemLongClickListener() {
+            @Override
+            public boolean onItemLongClick(AdapterView<?> parent, View view, int position, long id) {
+                longClickedItemIndex = position;
+                return false;
+            }
+        });
+
+        TabHost tabHost = (TabHost) findViewById(R.id.tabHost);
+
+        tabHost.setup();
+
+        TabHost.TabSpec tabSpec = tabHost.newTabSpec("creator");
+//        tabSpec.setContent(R.id.tabCreator);
+        tabSpec.setIndicator("Creator");
+        tabHost.addTab(tabSpec);
+
+        tabSpec = tabHost.newTabSpec("list");
+        tabSpec.setContent(R.id.tabContactList);
+        tabSpec.setIndicator("List");
+        tabHost.addTab(tabSpec);
+
+        final Button addBtn = (Button) findViewById(R.id.btnAdd);
+        addBtn.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                Contact contact = new Contact(dbHandler.getContactsCount(), String.valueOf(nameTxt.getText()), String.valueOf(phoneTxt.getText()), String.valueOf(emailTxt.getText()), String.valueOf(addressTxt.getText()),imageUri );
+                if (!contactExists(contact)) {
+                    dbHandler.createContact(contact);
+                    Contacts.add(contact);
+                    contactAdapter.notifyDataSetChanged();
+                    Toast.makeText(getApplicationContext(), String.valueOf(nameTxt.getText()) + " has been added to your Contacts!", Toast.LENGTH_SHORT).show();
+                    return;
+                }
+                Toast.makeText(getApplicationContext(), String.valueOf(nameTxt.getText()) + " already exists. Please use a different name.", Toast.LENGTH_SHORT).show();
+            }
+        });
+
+        nameTxt.addTextChangedListener(new TextWatcher() {
+            @Override
+            public void beforeTextChanged(CharSequence charSequence, int i, int i2, int i3) {
+
+            }
+
+            @Override
+            public void onTextChanged(CharSequence charSequence, int i, int i2, int i3) {
+                addBtn.setEnabled(String.valueOf(nameTxt.getText()).trim().length() > 0);
+            }
+
+            @Override
+            public void afterTextChanged(Editable editable) {
+
+            }
+        });
+
+        contactImageImgView.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Intent intent = new Intent();
+                intent.setType("image/*");
+                intent.setAction(Intent.ACTION_GET_CONTENT);
+                startActivityForResult(Intent.createChooser(intent, "Select Contact Image"), 1);
+            }
+
+        });
+
+        if (dbHandler.getContactsCount() != 0)
+            Contacts.addAll(dbHandler.getAllContacts());
+
+        populateList();
     }
 
-    public final class TeamList {
-        private TeamList() {}
-
-        public class TeamEntry implements BaseColumns {
-            public static final String TABLE_NAME = "Team List";
-            public static final String COLUMN_NAME_TITLE = "Team Number";
-            public static final String COLUMN_NAME_SUBTITLE = "Team Name";
-        }
-
-        private static final String SQL_CREATE_ENTRIES =
-                "CREATE TABLE" +TeamEntry.TABLE_NAME + " (" +
-                        TeamEntry._ID + "INTEGER PRIMARY KEY ," +
-                        TeamEntry.COLUMN_NAME_TITLE + "TEXT , " +
-                        TeamEntry.COLUMN_NAME_SUBTITLE + "TEXT)";
+    public void onCreateContextMenu(ContextMenu menu, View view, ContextMenu.ContextMenuInfo menuInfo) {
+        super.onCreateContextMenu(menu, view, menuInfo);
 
 
-        private static final String SQL_DELETE_ENTRIES =
-                "DROP TABLE IF EXISTS" + TeamEntry.TABLE_NAME;
-        public class TeamReaderDbHelper extends SQLiteOpenHelper {
-            public static final int DATABASE_VERSION = 1;
-            public static final String DATABASE_NAME = "TeamReader.db";
-
-            public TeamReaderDbHelper(Context context) {
-                super(context, DATABASE_NAME, null, DATABASE_VERSION);
-            }
-
-            public void onCreate(SQLiteDatabase db) {
-                db.execSQL(SQL_CREATE_ENTRIES);
-            }
-            public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion){
-                db.execSQL(SQL_DELETE_ENTRIES);
-                onCreate(db);
-            }
-            public void onDowngrade(SQLiteDatabase db, int oldVersion, int newVersion) {
-                onUpgrade(db, oldVersion, newVersion);
-            }
-        }
-
+        menu.setHeaderTitle("Contact Options");
+        menu.add(Menu.NONE, EDIT, menu.NONE, "Edit Contact");
+        menu.add(Menu.NONE, DELETE, menu.NONE, "Delete Contact");
     }
 
+    public boolean onContextItemSelected(MenuItem item) {
+        switch (item.getItemId()) {
+            case EDIT:
+                // TODO: Implement editing a contact
+                break;
+            case DELETE:
+                dbHandler.deleteContact(Contacts.get(longClickedItemIndex));
+                Contacts.remove(longClickedItemIndex);
+                contactAdapter.notifyDataSetChanged();
+                break;
+        }
 
+        return super.onContextItemSelected(item);
+    }
 
+    private boolean contactExists(Contact contact) {
+        String name = contact.getName();
+        int contactCount = Contacts.size();
 
+        for (int i = 0; i < contactCount; i++) {
+            if (name.compareToIgnoreCase(Contacts.get(i).getName()) == 0)
+                return true;
+        }
+        return false;
+    }
+
+    public void onActivityResult(int reqCode, int resCode, Intent data) {
+        if (resCode == RESULT_OK) {
+            if (reqCode == 1) {
+
+                contactImageImgView.setImageURI(data.getData());
+            }
+        }
+    }
+
+    private void populateList() {
+        contactAdapter = new ContactListAdapter();
+        contactListView.setAdapter(contactAdapter);
+    }
+
+    private class ContactListAdapter extends ArrayAdapter<Contact> {
+        public ContactListAdapter() {
+            super (ScoutingHome.this, R.layout.autorankoutputview, Contacts);
+        }
+
+        @Override
+        public View getView(int position, View view, ViewGroup parent) {
+            if (view == null)
+                view = getLayoutInflater().inflate(R.layout.autorankoutputview, parent, false);
+
+            Contact currentContact = Contacts.get(position);
+
+            TextView name = (TextView) view.findViewById(R.id.contactName);
+            name.setText(currentContact.getName());
+            TextView phone = (TextView) view.findViewById(R.id.phoneNumber);
+            phone.setText(currentContact.getPhone());
+            TextView email = (TextView) view.findViewById(R.id.emailAddress);
+            email.setText(currentContact.getEmail());
+            TextView address = (TextView) view.findViewById(R.id.cAddress);
+            address.setText(currentContact.getAddress());
+            ImageView ivContactImage = (ImageView) view.findViewById(R.id.ivContactImage);
+            ivContactImage.setImageURI(currentContact.getImageURI());
+
+            return view;
+        }
+    }
+
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        getMenuInflater().inflate(R.menu.navigation, menu);
+        return true;
+    }
 
 }
